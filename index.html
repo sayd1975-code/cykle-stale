@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#020617">
+<meta name="description" content="Cykle stałe G81–G89 sterowania PRONUM 640FC — wiercenie i wytaczanie, ściaga i generator programu CNC, po frezersku">
+<title>Cykle stałe G8x — wiercenie i wytaczanie</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #020617; color: #e2e8f0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: 40px;
+  }
+  header {
+    background: linear-gradient(90deg, #b91c1c, #dc2626, #b91c1c);
+    padding: 18px 16px 14px; color: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+  }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: -.3px; }
+  header p { margin: 3px 0 0; font-size: 13px; color: #fee2e2; }
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(2,6,23,.96); backdrop-filter: blur(6px);
+    border-bottom: 1px solid #1e293b;
+    padding: 8px 8px 0; display: flex; gap: 4px; overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 16px; border: none; border-radius: 12px 12px 0 0;
+    background: transparent; color: #94a3b8; font-weight: 700; font-size: 14px;
+    white-space: nowrap; cursor: pointer;
+  }
+  .tab.active { background: #1e293b; color: #f87171; }
+  main { padding: 12px; }
+  .card {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 14px;
+    padding: 14px; margin-bottom: 12px;
+  }
+  .mapa-item {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 14px;
+    padding: 14px; margin-bottom: 8px; cursor: pointer; text-align: left;
+    color: inherit; font: inherit;
+  }
+  .mapa-item:active { background: #1e293b; }
+  .mapa-item .ico { font-size: 22px; width: 36px; text-align: center; }
+  .mapa-item .t { font-weight: 700; font-size: 15px; }
+  .mapa-item .id { color: #ef4444; font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 13px; }
+  .mapa-item .note { margin-left: auto; font-size: 11px; color: #94a3b8; text-align: right; max-width: 42%; }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 12px; }
+  .chip {
+    padding: 8px 12px; border-radius: 10px; white-space: nowrap; cursor: pointer;
+    background: #0f172a; border: 1px solid #1e293b; color: #cbd5e1;
+    font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 13px;
+  }
+  .chip.active { background: #1e293b; border-color: #ef4444; color: #f87171; }
+  .gtitle { font-weight: 800; font-size: 12px; color: #64748b; margin: 14px 4px 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .frow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+  .frow:last-child { border-bottom: none; }
+  .frow .r { min-width: 44px; text-align: center; font-family: ui-monospace, Menlo, monospace; font-weight: 800; color: #fbbf24; background: #1e293b; border-radius: 8px; padding: 5px 6px; font-size: 13px; }
+  .frow label { flex: 1; font-size: 13px; }
+  .frow input, .frow select, textarea {
+    background: #020617; border: 1px solid #334155; color: #e2e8f0;
+    border-radius: 8px; padding: 8px 10px; font-size: 14px; width: 130px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .frow select { width: 90px; }
+  textarea { width: 100%; min-height: 90px; resize: vertical; }
+  .hint { font-size: 11px; color: #94a3b8; padding: 4px 12px 10px; border-bottom: 1px solid #1e293b; }
+  .desc-title { font-weight: 800; color: #f87171; font-size: 15px; margin-bottom: 4px; }
+  .desc { font-size: 13px; color: #cbd5e1; }
+  .hala { font-size: 12px; color: #94a3b8; margin: 7px 0 0; }
+  .warn { font-size: 12px; color: #fbbf24; margin: 8px 0 0; }
+  .codebox { background: #020617; border: 1px solid #334155; border-radius: 12px; overflow: hidden; }
+  .codebox .bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #0f172a; border-bottom: 1px solid #1e293b; }
+  .codebox .bar .chipname { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: #94a3b8; }
+  pre { margin: 0; padding: 12px; font-size: 12px; line-height: 1.55; overflow-x: auto; font-family: ui-monospace, Menlo, monospace; color: #fbbf24; }
+  .btn {
+    border: none; border-radius: 8px; padding: 9px 14px; font-weight: 700; cursor: pointer;
+    background: #ef4444; color: #fff; font-size: 13px;
+  }
+  .btn-ghost { background: #1e293b; color: #cbd5e1; }
+  .btn-copy { background: #dc2626; }
+  .arow, .zrow { display: flex; gap: 12px; padding: 10px 12px; border-bottom: 1px solid #1e293b; align-items: baseline; }
+  .arow:last-child, .zrow:last-child { border-bottom: none; }
+  .arow .r { min-width: 44px; text-align: center; font-family: ui-monospace, Menlo, monospace; font-weight: 800; color: #fbbf24; background: #1e293b; border-radius: 8px; padding: 4px 6px; font-size: 13px; align-self: center; }
+  .arow .d { font-size: 13px; color: #cbd5e1; }
+  .zrow .err { font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: #f87171; font-size: 13px; }
+  .zrow .fix { font-size: 12px; color: #cbd5e1; }
+  .muted { color: #94a3b8; font-size: 13px; margin: 0 4px 10px; }
+  .gold { border-color: #b45309; background: linear-gradient(135deg, #1c1917, #292524); }
+  .gold .gt { font-weight: 800; color: #fbbf24; margin-bottom: 4px; font-size: 15px; }
+  .gold p { margin: 4px 0 0; font-size: 13px; color: #e7e5e4; }
+  .gold code, .amber { color: #fbbf24; font-family: ui-monospace, Menlo, monospace; }
+  .safe { margin: 8px 0 0; padding-left: 20px; font-size: 13px; color: #e2e8f0; }
+  .safe li { margin: 6px 0; }
+  .lvarow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+  .lvarow label { flex: 1; font-size: 13px; }
+  .lvarow input[type=checkbox] { width: 22px; height: 22px; accent-color: #dc2626; }
+  .foot { text-align: center; color: #475569; font-size: 11px; padding: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>⛏️ Cykle stałe G81–G89</h1>
+  <p>Wiercenie i wytaczanie na PRONUM 640FC — ściaga i generator, po frezersku</p>
+</header>
+<nav id="nav"></nav>
+<main id="view"></main>
+<div class="foot">źródło: Instrukcja Programowania CNC PRONUM 640FC (lipiec 2014), rozdz. 3.15 · cykl w pamięci przykrywa standardowy</div>
+
+<script>
+"use strict";
+
+// ============ DANE (1:1 z rozdz. 3.15) ============
+var R_INFO = {
+  R0:  { label: "Postój NAD otworem przed zjazdem", hint: "sekundy — dla G83", def: "0" },
+  R1:  { label: "Pierwsza głębokość wiercenia", hint: "przyrost od R2, bez znaku — tylko G83", def: "20" },
+  R2:  { label: "Płaszczyzna odniesienia", hint: "absolutnie; bezpieczna wysokość nad detalem, np. +5", def: "5" },
+  R3:  { label: "Dno otworu", hint: "współrzędna absolutna, np. -25", def: "-25" },
+  R4:  { label: "Postój na dnie otworu", hint: "sekundy (G4 FR4)", def: "1" },
+  R5:  { label: "Zmniejszenie przyrostu głębokości", hint: "każdy kolejny zjazd krótszy o tyle — tylko G83", def: "5" },
+  R6:  { label: "Obroty przy wycofaniu", hint: "przeciwne do R7: R7=3 → R6=4 (G84)", def: "4" },
+  R7:  { label: "Obroty wrzeciona w cyklu", hint: "3 lub 4 — zgodnie z tym co przed cyklem (G84, G86, G87, G88)", def: "3" },
+  R10: { label: "Płaszczyzna wycofania", hint: "absolutnie; daj ≥ R2", def: "10" },
+  R11: { label: "Płaszczyzna", hint: "0 = XY, 1 = YZ, 2 = ZX", def: "0" }
+};
+
+var CYKLE = [
+  {
+    id: "G81", icon: "⚫", task: "Wiercenie / nawiercanie",
+    desc: "Najprostszy cykl: szybki dojazd do R2, roboczo do dna R3, szybkie wycofanie do R2.",
+    hala: "Na przelot, zwykłe wiercenie. Podstawa — cała reszta to odmiany tej samej piosenki.",
+    rs: ["R2", "R3", "R11"]
+  },
+  {
+    id: "G82", icon: "🔵", task: "Wiercenie / pogłębianie",
+    desc: "Jak G81 plus postój na dnie (R4) i osobna płaszczyzna wycofania (R10).",
+    hala: "Pogłębianie, punktowanie — postój czyści dno otworu, nie zostaje wiór.",
+    rs: ["R2", "R3", "R4", "R10", "R11"]
+  },
+  {
+    id: "G83", icon: "🔴", task: "Wiercenie głębokich otworów",
+    desc: "Zjazdy krokami: pierwszy R1, każdy kolejny KRÓTSZY o R5, z postojami i wycofaniem do R2 na czysto.",
+    hala: "Głębokie otwory — maszyna sama skraca przyrosty, wiertło się nie zagrzebie. Czysta poezja na twardzielu.",
+    rs: ["R0", "R1", "R2", "R3", "R4", "R5", "R10", "R11"]
+  },
+  {
+    id: "G84", icon: "🌀", task: "Gwintowanie (niesynchroniczne)",
+    desc: "Zjazd z gwintem (R7), zmiana obrotów na przeciwne (R6), wyjście posuwem, odbicie do R10.",
+    hala: "Przykład z instrukcji (FYJ 40RN) — na Twojej maszynie może nie być w pamięci. Wymaga OPRAWKI kompensacyjnej; F i S dobrane do skoku gwintu!",
+    warn: "Gwintowanie niesynchroniczne: obróbka tylko z oprawką wyrównującą. Bez niej — śruba albo wrzeciono.",
+    rs: ["R2", "R3", "R7", "R6", "R10"]
+  },
+  {
+    id: "G85", icon: "⭕", task: "Wytaczanie — wersja 1",
+    desc: "Roboczo do dna, roboczo WYCOFANIE do R10.",
+    hala: "Gładki otwór bez śladu po wyjściu — tam gdzie narzędzie nie może drapać.",
+    rs: ["R2", "R3", "R10", "R11"]
+  },
+  {
+    id: "G86", icon: "⛔", task: "Wytaczanie — wersja 2",
+    desc: "Postój na dnie, STOP wrzeciona (M5), szybkie wyjście do R10, obroty wracają (R7).",
+    hala: "Szybkie wyjście — nie ślizga się po ściance, bo stoi. Klasyka przy wytaczaniu.",
+    rs: ["R2", "R3", "R4", "R7", "R10", "R11"]
+  },
+  {
+    id: "G87", icon: "✋", task: "Wytaczanie — wersja 3",
+    desc: "Roboczo do dna ze stopem wrzeciona, potem STOP M0 — wycofanie RĘCZNE.",
+    hala: "Na ekranie: „Wycofaj ręcznie!!!”. Wciskasz START POSUWU (I) i dalej. Tak ma być!",
+    rs: ["R2", "R3", "R7", "R11"]
+  },
+  {
+    id: "G88", icon: "🛑", task: "Wytaczanie — wersja 4",
+    desc: "Jak G87 plus postój na dnie (R4) — potem STOP M0 i wycofanie ręczne.",
+    hala: "Główka mierzona? Postój, stop, ręka robota — spokojnie i dokładnie.",
+    rs: ["R2", "R3", "R4", "R7", "R11"]
+  },
+  {
+    id: "G89", icon: "⏺", task: "Wytaczanie — wersja 5",
+    desc: "Postój na dnie (R4), potem robocze wycofanie do R2 (posuwem).",
+    hala: "Postój + gładkie wyjście posuwem — dla najczystszych gniazd.",
+    rs: ["R2", "R3", "R4", "R11"]
+  }
+];
+
+var MAPA = [
+  ["Na przelot, zwykłe wiercenie", "G81", "najprostszy"],
+  ["Pogłębienie / punktowanie", "G82", "R4 czyści dno"],
+  ["Głęboki otwór, wiertło się grzeje", "G83", "R5 skraca kolejne zjazdy"],
+  ["Gwint z oprawką", "G84", "niesynchroniczne!"],
+  ["Wytaczanie — gładkie wyjście posuwem", "G85", "bez śladu po wyjściu"],
+  ["Wytaczanie — stop wrzeciona, szybkie wyjście", "G86", "R7 wraca obroty"],
+  ["Wytaczanie — wycofanie RĘCZNE", "G87", "STOP M0 — tak ma być"],
+  ["Wytaczanie — postój + ręczne wycofanie", "G88", "STOP M0"],
+  ["Wytaczanie — postój, wyjście posuwem", "G89", "najczystsze gniazda"]
+];
+
+var ZASADY = [
+  ["Brak F / S / M3 przed cyklem", "Cykl nie ruszy. Najpierw posuw F, obroty S i kierunek M3/M4 — potem R-ki i G8x."],
+  ["Pominięty parametr R", "Podajesz WSZYSTKIE parametry R przewidziane dla cyklu — nawet zerowe. Wszystkie!"],
+  ["Zapomniałeś G80", "Cykl jest MODALNY — zostaje aktywny i wierci przy każdym następnym ruchu! Na koniec: Z... G80"],
+  ["Wariant L zamiast G", "Zamiast „... G81” piszesz „R2=.. R3=.. L81” — ale wtedy L81 doklejasz do KAŻDEGO bloku otworu, a G80 odpada (ostatni blok to samo Z...)."],
+  ["Maszyna stoi: STOP M0, „Wycofaj ręcznie!!!”", "To G87/G88 i tak ma być. Wycofaj narzędzie ręcznie i wciśnij START POSUWU (I)."],
+  ["Własne podprogramy L81–L89, L900–L931", "Zajęte! Przykryją cykle stałe i makrocykle. Nie nazywaj tak własnych programów."],
+  ["Własny cykl stały", "Zapisany w pamięci programu JAKO G8x — przykrywa standardowy. Bezpieczniki: własne cykle twórz jako G101–G199."],
+  ["Zmiana głębokości w locie", "Legalna: w bloku otworu dopisz np. „X170 Y250 R3=-30” — od tego otworu wierci głębiej."]
+];
+
+var ALFABET = [
+  ["R0", "Postój NAD otworem przed zjazdem (sekundy, G83)"],
+  ["R1", "Pierwsza głębokość wiercenia — przyrost od R2 (G83)"],
+  ["R2", "Płaszczyzna odniesienia — gdzie narzędzie pozycjonuje się nad otworem (absolutnie)"],
+  ["R3", "Dno — głębokość wiercenia/gwintowania/wytaczania (absolutnie)"],
+  ["R4", "Postój NA DNIE otworu (sekundy)"],
+  ["R5", "O ile krótszy każdy kolejny zjazd (G83)"],
+  ["R6", "Obroty przy wycofaniu — przeciwne do R7 (G84)"],
+  ["R7", "Obroty wrzeciona w cyklu (3 lub 4) — G84, G86, G87, G88"],
+  ["R10", "Płaszczyzna wycofania po cyklu (absolutnie, daj ≥ R2)"],
+  ["R11", "Płaszczyzna pracy: 0 = XY, 1 = YZ, 2 = ZX"],
+  ["G80", "Kasowanie cyklu stałego — bez tego cykl wisi w powietrzu!"]
+];
+
+// ============ STAN ============
+var LS_KEY = "cykle-stale-vals-v1";
+var tab = "mapa";
+var sel = "G81";
+var vals = (function () {
+  var d = {
+    F: "100", S: "540", M: "M3", D: "1", Zbez: "50",
+    holes: "X120 Y200\nX120 Y250\nX170 Y250",
+    lvar: "0"
+  };
+  CYKLE.forEach(function (c) { c.rs.forEach(function (r) { d[c.id + "|" + r] = R_INFO[r].def; }); });
+  try {
+    var s = localStorage.getItem(LS_KEY);
+    if (s) {
+      var saved = JSON.parse(s);
+      Object.keys(d).forEach(function (k) { if (saved[k] !== undefined) d[k] = saved[k]; });
+    }
+  } catch (e) {}
+  return d;
+})();
+
+function save() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(vals)); } catch (e) {}
+}
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function setVal(k, v) { vals[k] = v; save(); render(); refreshCode(); }
+function setTab(t) { tab = t; render(); if (tab === "gen") refreshCode(); }
+function selectCykl(id) { sel = id; render(); refreshCode(); }
+function openCykl(id) { sel = id; tab = "gen"; render(); refreshCode(); }
+function currentCykl() { var c = null; CYKLE.forEach(function (x) { if (x.id === sel) c = x; }); return c; }
+
+// ============ GENERATOR ============
+function buildCode() {
+  var c = currentCykl();
+  var out = [];
+  var n = 10;
+  var L = vals.lvar === "1";
+  var word = L ? c.id.replace("G", "L") : c.id;
+  out.push("N" + n + " F" + vals.F + " S" + vals.S + " " + vals.M); n += 10;
+  if (vals.D) { out.push("N" + n + " G0 D" + vals.D + " Z" + vals.Zbez); } else { out.push("N" + n + " G0 Z" + vals.Zbez); }
+  n += 10;
+  var holes = String(vals.holes).split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+  if (!holes.length) holes = ["X0 Y0"];
+  out.push("N" + n + " " + holes[0]); n += 10;
+  var decl = c.rs.map(function (r) { return r + "=" + vals[c.id + "|" + r]; }).join(" ");
+  out.push("N" + n + " " + decl + " " + word); n += 10;
+  for (var i = 1; i < holes.length; i++) {
+    out.push("N" + n + " " + holes[i] + (L ? " " + word : "")); n += 10;
+  }
+  if (L) { out.push("N" + n + " Z" + vals.Zbez); } else { out.push("N" + n + " Z" + vals.Zbez + " G80"); }
+  return out.join("\n");
+}
+
+function copyCode() {
+  var txt = buildCode();
+  function done() {
+    var b = document.getElementById("copy-btn");
+    if (b) { b.textContent = "✅ Skopiowane"; setTimeout(function () { b.textContent = "📋 Kopiuj"; }, 1500); }
+  }
+  function fallback() {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    } catch (e) {}
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done, fallback);
+  } else { fallback(); }
+}
+
+// ============ WIDOKI ============
+function render() {
+  var nav = document.getElementById("nav");
+  var tabs = [["mapa", "🗺️ Mapa"], ["gen", "⛏️ Generator"], ["abc", "🔤 R-ki"], ["zas", "📜 Zasady"]];
+  nav.innerHTML = tabs.map(function (t) {
+    return '<button class="tab' + (tab === t[0] ? " active" : "") + '" onclick="setTab(\'' + t[0] + '\')">' + t[1] + "</button>";
+  }).join("");
+
+  var v = document.getElementById("view");
+  if (tab === "mapa") v.innerHTML = viewMapa();
+  else if (tab === "gen") v.innerHTML = viewGen();
+  else if (tab === "abc") v.innerHTML = viewAbc();
+  else v.innerHTML = viewZas();
+  window.scrollTo(0, 0);
+}
+
+function viewMapa() {
+  var h = '<p class="muted">Klikasz zadanie → generator z gotowymi wartościami. Zmieniasz R-ki i otwory, kopiujesz program.</p>';
+  h += MAPA.map(function (row) {
+    var m = null;
+    CYKLE.forEach(function (x) { if (x.id === row[1]) m = x; });
+    return '<button class="mapa-item" onclick="openCykl(\'' + row[1] + '\')">' +
+      '<span class="ico">' + m.icon + "</span>" +
+      '<span><span class="t">' + esc(row[0]) + '</span><br><span class="id">' + row[1] + "</span></span>" +
+      '<span class="note">' + esc(row[2]) + "</span></button>";
+  }).join("");
+  h += '<div class="card gold"><div class="gt">🥇 Złota zasada cykli stałych</div>' +
+    "<p>Cykl jest <b>modalny</b>: deklarujesz R-ki i <code>G8x</code> nad <b>pierwszym</b> otworem — potem podajesz <b>tylko współrzędne</b> kolejnych, każdy blok wierci. Koniec zabawy: <code>Z… G80</code> — bez G80 cykl wisi i wierci dalej!</p></div>";
+  return h;
+}
+
+function viewGen() {
+  var m = currentCykl();
+  var h = '<div class="chips">' + CYKLE.map(function (x) {
+    return '<button class="chip' + (sel === x.id ? " active" : "") + '" onclick="selectCykl(\'' + x.id + '\')">' + x.icon + " " + x.id + "</button>";
+  }).join("") + "</div>";
+
+  h += '<div class="card"><div class="desc-title">' + m.icon + " " + m.id + " — " + esc(m.task) + "</div>" +
+    '<p class="desc">' + esc(m.desc) + "</p>" +
+    '<p class="hala">🏭 <b>Na hali:</b> ' + esc(m.hala) + "</p>";
+  if (m.warn) h += '<p class="warn">⚠️ ' + esc(m.warn) + "</p>";
+  h += "</div>";
+
+  h += '<div class="gtitle">Narzędzie</div><div class="card" style="padding:0">';
+  h += '<div class="frow"><span class="r">F</span><label>Posuw roboczy (mm/min)</label><input inputmode="decimal" value="' + esc(vals.F) + '" oninput="setVal(\'F\', this.value)"></div>';
+  h += '<div class="frow"><span class="r">S</span><label>Obroty wrzeciona</label><input inputmode="decimal" value="' + esc(vals.S) + '" oninput="setVal(\'S\', this.value)"></div>';
+  h += '<div class="frow"><span class="r">M</span><label>Kierunek obrotów</label><select onchange="setVal(\'M\', this.value)">' +
+    '<option value="M3"' + (vals.M === "M3" ? " selected" : "") + '>M3 (prawo)</option><option value="M4"' + (vals.M === "M4" ? " selected" : "") + '>M4 (lewo)</option></select></div>';
+  h += '<div class="frow"><span class="r">D</span><label>Korekcja długości narzędzia</label><input inputmode="numeric" value="' + esc(vals.D) + '" oninput="setVal(\'D\', this.value)"></div>';
+  h += '<div class="frow"><span class="r">Z</span><label>Wysokość bezpieczna (start i koniec)</label><input inputmode="decimal" value="' + esc(vals.Zbez) + '" oninput="setVal(\'Zbez\', this.value)"></div>';
+  h += "</div>";
+
+  h += '<div class="gtitle">Parametry ' + m.id + ' — wszystkie R obowiązkowe (nawet zerowe!)</div><div class="card" style="padding:0">';
+  m.rs.forEach(function (r) {
+    var info = R_INFO[r];
+    h += '<div class="frow"><span class="r">' + r + '</span><label>' + esc(info.label) + "</label>" +
+      '<input inputmode="decimal" value="' + esc(vals[m.id + "|" + r]) + '" oninput="setVal(\'' + m.id + "|" + r + '\', this.value)"></div>';
+    h += '<div class="hint">' + esc(info.hint) + "</div>";
+  });
+  h += "</div>";
+
+  h += '<div class="gtitle">Otwory</div><div class="card" style="padding:0">';
+  h += '<div style="padding:10px 12px 4px"><textarea oninput="setVal(\'holes\', this.value)">' + esc(vals.holes) + "</textarea></div>";
+  h += '<div class="hint" style="padding-bottom:12px">Jeden otwór na linię: „X120 Y250”. Możesz dopisać zmianę w locie: „X170 Y250 R3=-30”.</div>';
+  h += '<div class="lvarow"><input type="checkbox" id="lv" ' + (vals.lvar === "1" ? "checked" : "") + ' onchange="setVal(\'lvar\', this.checked ? \'1\' : \'0\')"><label for="lv">Wariant L: zamiast G81 → „R-ki + L81”, L81 na końcu KAŻDEGO otworu, koniec bez G80</label></div>';
+  h += "</div>";
+
+  h += '<div class="codebox"><div class="bar"><span class="chipname" id="call-chip"></span>' +
+    '<button class="btn btn-copy" id="copy-btn" onclick="copyCode()">📋 Kopiuj</button></div>' +
+    '<pre id="code-pre"></pre></div>';
+  h += '<p class="muted" style="padding-top:10px">Kolejność święta: F/S/M → korekcja → pierwszy otwór → R-ki + G8x → reszta otworów → Z… G80. Pierwszy raz: skrawek, wolno, palec na feed override! 🔧</p>';
+  return h;
+}
+
+function viewAbc() {
+  var h = '<p class="muted">Alfabet cykli stałych — jeden na wszystkie G8x. Uczysz się RAZ.</p><div class="card" style="padding:0">';
+  h += ALFABET.map(function (a) {
+    return '<div class="arow"><span class="r">' + a[0] + '</span><span class="d">' + esc(a[1]) + "</span></div>";
+  }).join("");
+  return h + "</div>";
+}
+
+function viewZas() {
+  var h = '<p class="muted">Co krzyczy maszyna → co poprawić. Zasady 1:1 z rozdz. 3.15 instrukcji.</p><div class="card" style="padding:0">';
+  h += ZASADY.map(function (z) {
+    return '<div class="zrow"><div class="err">' + esc(z[0]) + '</div><div class="fix">→ ' + esc(z[1]) + "</div></div>";
+  }).join("");
+  h += "</div>";
+  h += '<div class="card gold"><div class="gt">🔧 Bezpieczny start</div><ol class="safe">' +
+    "<li>R2 = +2…5 mm nad detalem → łagodny zjazd</li>" +
+    "<li>R10 ≥ R2 — maszyna zawsze wraca nad detal</li>" +
+    "<li>Zacznij od G81 na jednym otworze — reszta to odmiany</li>" +
+    "<li>Pierwszy raz na skrawku, feed override w garści</li>" +
+    "<li>Na końcu Z… G80 — i cykl oddaje sterowanie 🍒</li></ol></div>";
+  return h;
+}
+
+function refreshCode() {
+  var pre = document.getElementById("code-pre");
+  var chip = document.getElementById("call-chip");
+  if (pre) pre.textContent = buildCode();
+  if (chip) {
+    var c = currentCykl();
+    chip.textContent = c.id + " — " + c.rs.length + " parametrów R + F/S/M — gotowy program";
+  }
+}
+
+render();
+refreshCode();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

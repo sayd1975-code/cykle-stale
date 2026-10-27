@@ -1,0 +1,16 @@
+{
+  "name": "Cykle stałe G8x — PRONUM 640FC",
+  "short_name": "Cykle stałe",
+  "description": "Cykle stałe G81–G89 sterowania PRONUM 640FC — wiercenie i wytaczanie, ściaga i generator po frezersku",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "pl",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-mask.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
